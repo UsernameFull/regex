@@ -1,4 +1,5 @@
 class NFAState {
+    id:number=0;
     isEnd: boolean=false;
     Next: { [key: string]: NFAState; }={};
     eNext: NFAState[]=[];
@@ -12,8 +13,8 @@ function elinkState(from: NFAState, to: NFAState) {
 }
 
 class NFA {
-    start: NFAState=new NFAState;
-    end: NFAState=new NFAState;
+    start: NFAState=new NFAState();
+    end: NFAState=new NFAState();
 }
 
 function concatNFA(first: NFA, second: NFA):NFA {
@@ -58,8 +59,6 @@ function creatNFA(symbol: string):NFA {
     return nfa;
 }
 
-
-
 function creatRegexNFA():NFA {
     //(a|b|c)
     let c = creatNFA("c");
@@ -88,7 +87,85 @@ function creatRegexNFA():NFA {
     let charC = creatNFA("c");
     let charO = creatNFA("o");
     let charM = creatNFA("m");
-    let dotCOM = unionNFA(unionNFA(charDot,charC),unionNFA(charDot,charC));
+    let dotCOM = [charDot,charC,charO,charM].reduce((a,v)=>(concatNFA(a,v)))
 
     return ([group1,group2,to,group3,group4,dotCOM].reduce((a,v)=>(concatNFA(a,v))))
+}
+
+function dfs(state:NFAState,visited:NFAState[],id:number){
+    if(state.isEnd){
+        return true
+    }
+    for(let item of state.eNext){
+        if (visited.includes(item)){
+            // console.log(item.id);
+            return false;
+        }
+        item.id = id;
+        id++;
+        visited.push(item)
+        dfs(item,visited,id)
+    }
+    for(let item in state.Next){
+        if (visited.includes(state.Next[item])){
+            // console.log(state.Next[item].id);
+            return false;
+        }
+        state.Next[item].id = id;
+        id++;
+        visited.push(state.Next[item])
+        dfs(state.Next[item],visited,id)
+    }
+}
+interface Position{
+    x: number;
+    y: number;
+}
+
+function dfsDraw(state:NFAState){
+    let position:{x:number,y:number} ={x:0,y:0}
+    let drawLine = '';
+    function clgdrawLine(){
+        if(drawLine===''){
+            return;
+        }
+        console.log(drawLine);
+        drawLine = '';
+    }
+    function dfsfn(state:NFAState,visited: NFAState[]) {
+        if(state.isEnd){
+            console.log("$$$");
+            return true
+        }
+        for(let item of state.eNext){
+            if (visited.includes(item)){
+                clgdrawLine()
+                return false;
+            }
+            drawLine = drawLine+item.id+"-"
+            visited.push(item)
+            dfsfn(item,visited)
+        }
+        for(let item in state.Next){
+            if (visited.includes(state.Next[item])){
+                clgdrawLine()
+                return false;
+            }
+            drawLine = drawLine+state.Next[item].id+"+"+item.toLocaleUpperCase()+"+"
+            visited.push(state.Next[item])
+            dfsfn(state.Next[item],visited)
+        }
+        clgdrawLine()
+    }
+    dfsfn(state,[])
+}
+
+
+
+let mynfa = creatRegexNFA();
+dfs(mynfa.start,[],0);
+dfsDraw(mynfa.start);
+let t=0;
+function dfsRegexMatch(){
+
 }
