@@ -56,6 +56,7 @@ function closure(first: NFA):NFA {
 function creatNFA(symbol: string):NFA {
     let nfa = new NFA();
     linkState(nfa.start, nfa.end, symbol);
+    nfa.end.isEnd = true;
     return nfa;
 }
 
@@ -179,7 +180,6 @@ function dfsRegexMatch(nfa:NFA,str:string){
         // 当前节点是否能通过一般连接到达下一节点，如果不能则舍弃,若能则开始下一轮搜索
         let currentChar = str[i]
         if(state.Next[currentChar]){
-            console.log(currentChar)
             return (fn(state.Next[currentChar],visited,i+1))
         }else{
             return false
@@ -194,4 +194,6 @@ let mynfa = creatRegexNFA();
 // dfs(mynfa.start,[],0);
 // dfsDraw(mynfa.start);
 // let t=0;
-console.log(dfsRegexMatch(mynfa,"a@a.com"))
+console.log(dfsRegexMatch(mynfa,"ab@a.com"))
+console.log(dfsRegexMatch(mynfa,"abd@a.com"))
+console.log(dfsRegexMatch(mynfa,"d@a.com"))
