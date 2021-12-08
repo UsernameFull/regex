@@ -1,5 +1,5 @@
 class NFAState {
-    id:number=0;
+    depth:number=0;
     isEnd: boolean=false;
     Next: { [key: string]: NFAState; }={};
     eNext: NFAState[]=[];
@@ -92,29 +92,29 @@ function creatRegexNFA():NFA {
     return ([group1,group2,to,group3,group4,dotCOM].reduce((a,v)=>(concatNFA(a,v))))
 }
 
-function dfs(state:NFAState,visited:NFAState[],id:number){
+function dfs(state:NFAState,visited:NFAState[],depth:number){
     if(state.isEnd){
         return true
     }
     for(let item of state.eNext){
         if (visited.includes(item)){
-            // console.log(item.id);
+            // console.log(item.depth);
             return false;
         }
-        item.id = id;
-        id++;
+        item.depth = depth;
+        depth++;
         visited.push(item)
-        dfs(item,visited,id)
+        dfs(item,visited,depth)
     }
     for(let item in state.Next){
         if (visited.includes(state.Next[item])){
-            // console.log(state.Next[item].id);
+            // console.log(state.Next[item].depth);
             return false;
         }
-        state.Next[item].id = id;
-        id++;
+        state.Next[item].depth = depth;
+        depth++;
         visited.push(state.Next[item])
-        dfs(state.Next[item],visited,id)
+        dfs(state.Next[item],visited,depth)
     }
 }
 interface Position{
@@ -142,30 +142,56 @@ function dfsDraw(state:NFAState){
                 clgdrawLine()
                 return false;
             }
-            drawLine = drawLine+item.id+"-"
+            drawLine = drawLine+item.depth+"-"
             visited.push(item)
             dfsfn(item,visited)
         }
-        for(let item in state.Next){
-            if (visited.includes(state.Next[item])){
+        for(let key in state.Next){
+            if (visited.includes(state.Next[key])){
                 clgdrawLine()
                 return false;
             }
-            drawLine = drawLine+state.Next[item].id+"+"+item.toLocaleUpperCase()+"+"
-            visited.push(state.Next[item])
-            dfsfn(state.Next[item],visited)
+            drawLine = drawLine+state.Next[key].depth+"+"+key.toLocaleUpperCase()+"+"
+            visited.push(state.Next[key])
+            dfsfn(state.Next[key],visited)
         }
         clgdrawLine()
     }
     dfsfn(state,[])
 }
 
+function dfsRegexMatch(nfa:NFA,str:string){
+
+    function fn(state:NFAState,visited:NFAState[],i:number):boolean{
+        // 如果已经遍历整个nfa，则返回false
+        if (visited.includes(state)){
+            return false
+        }
+        // nfa到达了终止条件，返回true
+        if(state.isEnd){
+            return true
+        }
+        visited.push(state);
+        // 找与当前节点通过ε相连的节点,如果其中有到达了终止条件的，返回true
+        if(state.eNext.some(e=>fn(e,visited,i))){
+            return true
+        }
+        // 当前节点是否能通过一般连接到达下一节点，如果不能则舍弃,若能则开始下一轮搜索
+        let currentChar = str[i]
+        if(state.Next[currentChar]){
+            console.log(currentChar)
+            return (fn(state.Next[currentChar],visited,i+1))
+        }else{
+            return false
+        }
+    }
+
+    return fn(nfa.start,[],0)
+}
 
 
 let mynfa = creatRegexNFA();
-dfs(mynfa.start,[],0);
-dfsDraw(mynfa.start);
-let t=0;
-function dfsRegexMatch(){
-
-}
+// dfs(mynfa.start,[],0);
+// dfsDraw(mynfa.start);
+// let t=0;
+console.log(dfsRegexMatch(mynfa,"a@a.com"))
