@@ -1,5 +1,5 @@
 class NFAState {
-  depth: number = 0;
+  id: number = 0;
   isEnd: boolean = false;
   Next: { [key: string]: NFAState } = {};
   eNext: NFAState[] = [];
@@ -95,31 +95,36 @@ function creatRegexNFA(): NFA {
   );
 }
 
-function dfs(state: NFAState, visited: NFAState[], depth: number) {
-  if (state.isEnd) {
-    return true;
-  }
-  for (let item of state.eNext) {
-    if (visited.includes(item)) {
-      // console.log(item.depth);
-      return false;
-    }
-    item.depth = depth;
-    depth++;
-    visited.push(item);
-    dfs(item, visited, depth);
-  }
-  for (let item in state.Next) {
-    if (visited.includes(state.Next[item])) {
-      // console.log(state.Next[item].depth);
-      return false;
-    }
-    state.Next[item].depth = depth;
-    depth++;
-    visited.push(state.Next[item]);
-    dfs(state.Next[item], visited, depth);
-  }
+function orderNFA(nfa:NFA){
+    let id = 0
+    function dfs(state: NFAState, visited: Set<NFAState>) {
+        if (state.isEnd) {
+          return true;
+        }
+        for (let item of state.eNext) {
+          if (visited.has(item)) {
+            return false;
+          }
+          item.id = id;
+          id++;
+          visited.add(item);
+          dfs(item, visited);
+        }
+        for (let item in state.Next) {
+          if (visited.has(state.Next[item])) {
+            // console.log(state.Next[item].id);
+            return false;
+          }
+          state.Next[item].id = id;
+          id++;
+          visited.add(state.Next[item]);
+          dfs(state.Next[item], visited);
+        }
+      }
+      dfs(nfa.start,new Set())
 }
+
+
 interface Position {
   x: number;
   y: number;
@@ -128,40 +133,47 @@ interface Position {
 function dfsDraw(state: NFAState) {
   let position: { x: number; y: number } = { x: 0, y: 0 };
   let drawLine = "";
-  function clgdrawLine() {
-    if (drawLine === "") {
-      return;
-    }
+  let olayer =0 
+  function clgdrawLine(layer:number) {
+    // if (drawLine === "") {
+    //   return;
+    // }
     console.log(drawLine);
+    olayer++
+    console.log({layer:layer})
     drawLine = "";
   }
-  function dfsfn(state: NFAState, visited: NFAState[]) {
+  
+  function dfsfn(state: NFAState, visited: NFAState[],layer:number) {
     if (state.isEnd) {
       console.log("$$$");
       return true;
     }
     for (let item of state.eNext) {
       if (visited.includes(item)) {
-        clgdrawLine();
+        clgdrawLine(layer);
         return false;
       }
-      drawLine = drawLine + item.depth + "-";
+      drawLine = drawLine + item.id + "-";
       visited.push(item);
-      dfsfn(item, visited);
+      dfsfn(item, visited,layer);
+      layer++
     }
     for (let key in state.Next) {
       if (visited.includes(state.Next[key])) {
-        clgdrawLine();
+        clgdrawLine(layer);
         return false;
       }
       drawLine =
-        drawLine + state.Next[key].depth + "+" + key.toLocaleUpperCase() + "+";
+        drawLine + state.Next[key].id + "+" + key.toLocaleUpperCase() + "+";
       visited.push(state.Next[key]);
-      dfsfn(state.Next[key], visited);
+      dfsfn(state.Next[key], visited,layer);
+      layer++
     }
-    clgdrawLine();
+    clgdrawLine(layer);
+    
   }
-  dfsfn(state, []);
+  dfsfn(state, [],0);
 }
 
 function dfsRegexMatch(nfa: NFA, str: string) {
@@ -192,7 +204,7 @@ function dfsRegexMatch(nfa: NFA, str: string) {
 }
 
 let mynfa = creatRegexNFA();
-// dfs(mynfa.start,[],0);
+// orderNFA(mynfa);
 // dfsDraw(mynfa.start);
 console.log(dfsRegexMatch(mynfa, "ab@a.com"));
 console.log(dfsRegexMatch(mynfa, "abd@a.com"));
