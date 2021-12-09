@@ -95,35 +95,34 @@ function creatRegexNFA(): NFA {
   );
 }
 
-function orderNFA(nfa:NFA){
-    let id = 0
-    function dfs(state: NFAState, visited: Set<NFAState>) {
-        if (state.isEnd) {
-          return true;
-        }
-        for (let item of state.eNext) {
-          if (visited.has(item)) {
-            return false;
-          }
-          item.id = id;
-          id++;
-          visited.add(item);
-          dfs(item, visited);
-        }
-        for (let item in state.Next) {
-          if (visited.has(state.Next[item])) {
-            // console.log(state.Next[item].id);
-            return false;
-          }
-          state.Next[item].id = id;
-          id++;
-          visited.add(state.Next[item]);
-          dfs(state.Next[item], visited);
-        }
+function orderNFA(nfa: NFA) {
+  let id = 0;
+  function dfs(state: NFAState, visited: Set<NFAState>) {
+    if (state.isEnd) {
+      return true;
+    }
+    for (let item of state.eNext) {
+      if (visited.has(item)) {
+        return false;
       }
-      dfs(nfa.start,new Set())
+      item.id = id;
+      id++;
+      visited.add(item);
+      dfs(item, visited);
+    }
+    for (let item in state.Next) {
+      if (visited.has(state.Next[item])) {
+        // console.log(state.Next[item].id);
+        return false;
+      }
+      state.Next[item].id = id;
+      id++;
+      visited.add(state.Next[item]);
+      dfs(state.Next[item], visited);
+    }
+  }
+  dfs(nfa.start, new Set());
 }
-
 
 interface Position {
   x: number;
@@ -133,18 +132,18 @@ interface Position {
 function dfsDraw(state: NFAState) {
   let position: { x: number; y: number } = { x: 0, y: 0 };
   let drawLine = "";
-  let olayer =0 
-  function clgdrawLine(layer:number) {
+  let olayer = 0;
+  function clgdrawLine(layer: number) {
     // if (drawLine === "") {
     //   return;
     // }
     console.log(drawLine);
-    olayer++
-    console.log({layer:layer})
+    olayer++;
+    console.log({ layer: layer });
     drawLine = "";
   }
-  
-  function dfsfn(state: NFAState, visited: NFAState[],layer:number) {
+
+  function dfsfn(state: NFAState, visited: NFAState[], layer: number) {
     if (state.isEnd) {
       console.log("$$$");
       return true;
@@ -156,8 +155,8 @@ function dfsDraw(state: NFAState) {
       }
       drawLine = drawLine + item.id + "-";
       visited.push(item);
-      dfsfn(item, visited,layer);
-      layer++
+      dfsfn(item, visited, layer);
+      layer++;
     }
     for (let key in state.Next) {
       if (visited.includes(state.Next[key])) {
@@ -167,13 +166,12 @@ function dfsDraw(state: NFAState) {
       drawLine =
         drawLine + state.Next[key].id + "+" + key.toLocaleUpperCase() + "+";
       visited.push(state.Next[key]);
-      dfsfn(state.Next[key], visited,layer);
-      layer++
+      dfsfn(state.Next[key], visited, layer);
+      layer++;
     }
     clgdrawLine(layer);
-    
   }
-  dfsfn(state, [],0);
+  dfsfn(state, [], 0);
 }
 
 function dfsRegexMatch(nfa: NFA, str: string) {
@@ -203,52 +201,69 @@ function dfsRegexMatch(nfa: NFA, str: string) {
   return fn(nfa.start, [], 0);
 }
 
-function dfsRegexMatchFast(nfa:NFA,str:string){
+function dfsRegexMatchFast(nfa: NFA, str: string) {
   // 当前状态所有ε相连的节点是同一类节点，均可加入current,此处采用bfs
-  function neighbourState(current:Set<NFAState>){
+  function neighbourState(current: Set<NFAState>) {
     let queue = [...current];
-    let visted:Set<NFAState> = new Set();
-    while(queue.length!=0){
+    let visted: Set<NFAState> = new Set();
+    visted.add(queue[0]);
+    while (queue.length != 0) {
       let state = queue.shift();
-      state?.eNext.forEach((st)=>{
-        if(!visted.has(st)){
+      state?.eNext.forEach((st) => {
+        if (!visted.has(st)) {
           visted.add(st);
           queue.push(st);
         }
-      })
+      });
     }
-    return visted
+    return visted;
   }
 
-  function fn(nfa:NFA,str:string) {
+  function fn(nfa: NFA, str: string) {
     // 如果已经遍历整个nfa，则返回false
-    let currentStates:Set<NFAState> = neighbourState(new Set([nfa.start]));
-    for(let symbol of str){
-      let nextStates:Set<NFAState> = new Set();
+    let currentStates: Set<NFAState> = neighbourState(new Set([nfa.start]));
+    for (let symbol of str) {
+      let nextStates: Set<NFAState> = new Set();
       for (const state of currentStates) {
-        let nextState  = state.Next[symbol]
-        if(nextState){
-          nextStates = neighbourState(new Set([nextState]))
+        let nextState = state.Next[symbol];
+        if (nextState) {
+          nextStates = neighbourState(new Set([nextState]));
         }
       }
       currentStates = nextStates;
     }
-    currentStates.forEach(s=>{
-      if(s.isEnd){
-        return true
+    let res = false;
+    currentStates.forEach((s) => {
+      if (s.isEnd) {
+        res = true;
+        return;
       }
-    })
-    return false
+    });
+    return res;
   }
-  return fn(nfa,str)
+  return fn(nfa, str);
 }
 
 let mynfa = creatRegexNFA();
 // orderNFA(mynfa);
 // dfsDraw(mynfa.start);
+for (let i = 1; i < 100000; i++) {
+  dfsRegexMatch(mynfa, "abababababab@abababababa.com");
+  dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
+}
 
-console.log(dfsRegexMatchFast(mynfa, "a@a.com"));
+console.time("normal");
+for (let i = 1; i < 1000; i++) {
+  dfsRegexMatch(mynfa, "abababababab@abababababa.com");
+  dfsRegexMatch(mynfa, "abababababab@asdsadasd.com");
+  dfsRegexMatch(mynfa, "abababababab@abababababa.com");
+}
+console.timeEnd("normal");
 
-console.log(dfsRegexMatch(mynfa, "ab@a.com"));
-console.log(dfsRegexMatch(mynfa, "abd@a.com"));
-console.log(dfsRegexMatch(mynfa, "d@a.com"));
+console.time("fast??");
+for (let i = 1; i < 1000; i++) {
+  dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
+  dfsRegexMatchFast(mynfa, "abababababab@asdsadasd.com");
+  dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
+}
+console.timeEnd("fast??");
