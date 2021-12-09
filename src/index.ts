@@ -203,9 +203,52 @@ function dfsRegexMatch(nfa: NFA, str: string) {
   return fn(nfa.start, [], 0);
 }
 
+function dfsRegexMatchFast(nfa:NFA,str:string){
+  // 当前状态所有ε相连的节点是同一类节点，均可加入current,此处采用bfs
+  function neighbourState(current:Set<NFAState>){
+    let queue = [...current];
+    let visted:Set<NFAState> = new Set();
+    while(queue.length!=0){
+      let state = queue.shift();
+      state?.eNext.forEach((st)=>{
+        if(!visted.has(st)){
+          visted.add(st);
+          queue.push(st);
+        }
+      })
+    }
+    return visted
+  }
+
+  function fn(nfa:NFA,str:string) {
+    // 如果已经遍历整个nfa，则返回false
+    let currentStates:Set<NFAState> = neighbourState(new Set([nfa.start]));
+    for(let symbol of str){
+      let nextStates:Set<NFAState> = new Set();
+      for (const state of currentStates) {
+        let nextState  = state.Next[symbol]
+        if(nextState){
+          nextStates = neighbourState(new Set([nextState]))
+        }
+      }
+      currentStates = nextStates;
+    }
+    currentStates.forEach(s=>{
+      if(s.isEnd){
+        return true
+      }
+    })
+    return false
+  }
+  return fn(nfa,str)
+}
+
 let mynfa = creatRegexNFA();
 // orderNFA(mynfa);
 // dfsDraw(mynfa.start);
+
+console.log(dfsRegexMatchFast(mynfa, "a@a.com"));
+
 console.log(dfsRegexMatch(mynfa, "ab@a.com"));
 console.log(dfsRegexMatch(mynfa, "abd@a.com"));
 console.log(dfsRegexMatch(mynfa, "d@a.com"));
