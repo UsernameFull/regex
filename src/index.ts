@@ -39,17 +39,17 @@ function unionNFA(first: NFA, second: NFA): NFA {
   return { start: newstart, end: newend };
 }
 //重
-function closure(first: NFA): NFA {
+function closure(nfa: NFA): NFA {
   let newstart = new NFAState();
   let newend = new NFAState();
   newstart.isEnd = false;
   newend.isEnd = true;
 
-  elinkState(newstart, first.start);
-  elinkState(first.start, first.end);
-  elinkState(first.end, newend);
+  elinkState(newstart, nfa.start);
+  elinkState(nfa.end, nfa.start);
+  elinkState(nfa.end, newend);
   elinkState(newstart, newend);
-  first.end.isEnd = false;
+  nfa.end.isEnd = false;
 
   return { start: newstart, end: newend };
 }
@@ -93,6 +93,12 @@ function creatRegexNFA(): NFA {
   return [group1, group2, to, group3, group4, dotCOM].reduce((a, v) =>
     concatNFA(a, v)
   );
+  // return [group2, to].reduce((a, v) =>
+  //   concatNFA(a, v)
+  // );
+  // return concatNFA(group2, to)
+  // return group2
+
 }
 
 function orderNFA(nfa: NFA) {
@@ -174,25 +180,26 @@ function dfsDraw(state: NFAState) {
   dfsfn(state, [], 0);
 }
 
-function dfsRegexMatch(nfa: NFA, str: string) {
+function dfsRegexMatch(nfa: NFA, str: string):Boolean {
   function fn(state: NFAState, visited: NFAState[], i: number): boolean {
-    // 如果已经遍历整个nfa，则返回false
+    // 若已经到达过该节点，则返回false
     if (visited.includes(state)) {
       return false;
     }
+    visited.push(state);
     // nfa到达了终止条件，返回true
     if (state.isEnd) {
       return true;
     }
-    visited.push(state);
-    // 找与当前节点通过ε相连的节点,如果其中有到达了终止条件的，返回true
+    // 对ε相连的节点全部执行dfs递归，如果其中有到达了终止条件的，返回true
     if (state.eNext.some((e) => fn(e, visited, i))) {
       return true;
     }
-    // 当前节点是否能通过一般连接到达下一节点，如果不能则舍弃,若能则开始下一轮搜索
+    // 当前节点是否能通过一般连接到达下一节点，如果不能则舍弃,若能则以下一个字符串作为判断条件开始dfs递归
     let currentChar = str[i];
     if (state.Next[currentChar]) {
-      return fn(state.Next[currentChar], visited, i + 1);
+      // console.log(str[i])
+      return fn(state.Next[currentChar],[], i + 1);
     } else {
       return false;
     }
@@ -247,23 +254,35 @@ function dfsRegexMatchFast(nfa: NFA, str: string) {
 let mynfa = creatRegexNFA();
 // orderNFA(mynfa);
 // dfsDraw(mynfa.start);
-for (let i = 1; i < 100000; i++) {
+
+
+
+// jit
+
+for (let i = 1; i < 1000; i++) {
   dfsRegexMatch(mynfa, "abababababab@abababababa.com");
   dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
 }
 
 console.time("normal");
-for (let i = 1; i < 1000; i++) {
+for (let i = 1; i < 100; i++) {
   dfsRegexMatch(mynfa, "abababababab@abababababa.com");
   dfsRegexMatch(mynfa, "abababababab@asdsadasd.com");
-  dfsRegexMatch(mynfa, "abababababab@abababababa.com");
+  dfsRegexMatch(mynfa, "a@a.com");
 }
 console.timeEnd("normal");
 
 console.time("fast??");
-for (let i = 1; i < 1000; i++) {
+for (let i = 1; i < 100; i++) {
   dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
   dfsRegexMatchFast(mynfa, "abababababab@asdsadasd.com");
-  dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
+  dfsRegexMatchFast(mynfa, "a@a.com");
 }
 console.timeEnd("fast??");
+
+// console.log(dfsRegexMatch(mynfa,"aacccd@abab.com"))
+// console.log(dfsRegexMatchFast(mynfa,"aaccc@abab.com"))
+
+//console.assert(dfsRegexMatch(mynfa,"a@a.com"),"gg")
+// console.assert(dfsRegexMatch(mynfa,"ababcc@aa.com"),"gg")
+// console.assert(!dfsRegexMatch(mynfa,"ab@a.com"),"gg")
