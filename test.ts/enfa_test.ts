@@ -1,4 +1,4 @@
-import  {E_NFAState,E_NFA,creatRegexE_NFA,dfsRegexMatch} from "./enfa"
+import  {E_NFAState,E_NFA,creatRegexE_NFA,dfsRegexMatch} from "../src/enfa"
 
 function dfsRegexMatchFast(nfa: E_NFA, str: string) {
   // 当前状态所有ε相连的节点是同一类节点，均可加入current,此处采用bfs
@@ -44,13 +44,45 @@ function dfsRegexMatchFast(nfa: E_NFA, str: string) {
 }
 
 let mynfa = creatRegexE_NFA();
+// orderE_NFA(mynfa);
+// dfsDraw(mynfa.start);
+
+
+// jit
+for (let i = 1; i < 10000; i++) {
+  dfsRegexMatch(mynfa, "abababababab@abababababa.com");
+  dfsRegexMatchFast(mynfa, "abababababab@abababababa.com");
+}
+
+function genstr(n:number){
+  let tmp=''
+  for (let i = 0; i < n; i++) {
+    tmp = tmp + (Math.random()>0.33?'a':Math.random()>0.5?'b':'c')
+  }
+  return tmp+'@'+tmp+'com'
+}
+
+let teststr = genstr(10000);
+console.time("normal");
+for (let i = 1; i < 100; i++) {
+  dfsRegexMatchFast(mynfa, teststr);
+  dfsRegexMatchFast(mynfa, "abababababababababababababababababababababababababababababab@asdsadasd.com");
+  dfsRegexMatch(mynfa, "a@a.com");
+}
+console.timeEnd("normal");
+
+console.time("fast??");
+for (let i = 1; i < 100; i++) {
+  dfsRegexMatchFast(mynfa, teststr);
+  dfsRegexMatchFast(mynfa, "abababababababababababababababababababababababababababababab@asdsadasd.com");
+  dfsRegexMatchFast(mynfa, "a@a.com");
+}
+console.timeEnd("fast??");
+
+// console.log(dfsRegexMatch(mynfa,"aacccd@abab.com"))
+// console.log(dfsRegexMatchFast(mynfa,"aaccc@abab.com"))
 
 console.assert(dfsRegexMatch(mynfa,"a@a.com"),"gg")
 console.assert(dfsRegexMatch(mynfa,"ababcc@aa.com"),"gg")
 console.assert(!dfsRegexMatch(mynfa,"ad@a.com"),"gg")
 console.assert(!dfsRegexMatch(mynfa,"@a.com"),"gg")
-
-console.assert(dfsRegexMatchFast(mynfa,"a@a.com"),"gg")
-console.assert(dfsRegexMatchFast(mynfa,"ababcc@aa.com"),"gg")
-console.assert(!dfsRegexMatchFast(mynfa,"ad@a.com"),"gg")
-console.assert(!dfsRegexMatchFast(mynfa,"@a.com"),"gg")
