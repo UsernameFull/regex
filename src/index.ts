@@ -1,56 +1,36 @@
-import  {E_NFAState,E_NFA,creatRegexE_NFA,dfsRegexMatch} from "./enfa"
+import { E_NFAState, E_NFA, creatRegexE_NFA, dfsRegexMatch } from "./enfa";
+import { trasE_NFA2NFA, nfaRegexMatch } from "./enfa2nfa";
 
-function dfsRegexMatchFast(nfa: E_NFA, str: string) {
-  // 当前状态所有ε相连的节点是同一类节点，均可加入current,此处采用bfs
-  function neighbourState(current: Set<E_NFAState>) {
-    let queue = [...current];
-    let visted: Set<E_NFAState> = new Set();
-    visted.add(queue[0]);
-    while (queue.length != 0) {
-      let state = queue.shift();
-      state?.eNext.forEach((st) => {
-        if (!visted.has(st)) {
-          visted.add(st);
-          queue.push(st);
-        }
-      });
-    }
-    return visted;
-  }
+let myenfa = creatRegexE_NFA();
+let mynfa = trasE_NFA2NFA(myenfa);
 
-  function fn(nfa: E_NFA, str: string) {
-    // 如果已经遍历整个nfa，则返回false
-    let currentStates: Set<E_NFAState> = neighbourState(new Set([nfa.start]));
-    for (let symbol of str) {
-      let nextStates: Set<E_NFAState> = new Set();
-      for (const state of currentStates) {
-        let nextState = state.Next[symbol];
-        if (nextState) {
-          nextStates = neighbourState(new Set([nextState]));
-        }
-      }
-      currentStates = nextStates;
-    }
-    let res = false;
-    currentStates.forEach((s) => {
-      if (s.isEnd) {
-        res = true;
-        return;
-      }
-    });
-    return res;
-  }
-  return fn(nfa, str);
+// jit
+for (let i = 0; i < 1000; i++) {
+  dfsRegexMatch(myenfa, "a@a.com");
+  nfaRegexMatch(mynfa, "a@a.com");
 }
 
-let mynfa = creatRegexE_NFA();
+console.time("enfa");
+for (let i = 0; i < 10000; i++) {
+  dfsRegexMatch(myenfa, "ababababbabababbacbcbcbcbcbcababababbabababbacbcbcbcbcbc@acbcbcbcbcb.com");
+  dfsRegexMatch(myenfa, "ababcc@aa.com");
+  dfsRegexMatch(myenfa, "ababababbabababbacbcbcbcbcbcs@a.com");
+  dfsRegexMatch(myenfa, "@a.com");
+}
 
-console.assert(dfsRegexMatch(mynfa,"a@a.com"),"gg")
-console.assert(dfsRegexMatch(mynfa,"ababcc@aa.com"),"gg")
-console.assert(!dfsRegexMatch(mynfa,"ad@a.com"),"gg")
-console.assert(!dfsRegexMatch(mynfa,"@a.com"),"gg")
+console.timeEnd("enfa");
 
-console.assert(dfsRegexMatchFast(mynfa,"a@a.com"),"gg")
-console.assert(dfsRegexMatchFast(mynfa,"ababcc@aa.com"),"gg")
-console.assert(!dfsRegexMatchFast(mynfa,"ad@a.com"),"gg")
-console.assert(!dfsRegexMatchFast(mynfa,"@a.com"),"gg")
+console.time("nfa");
+for (let i = 0; i < 10000; i++) {
+  nfaRegexMatch(mynfa, "ababababbabababbacbcbcbcbcbcababababbabababbacbcbcbcbcbc@acbcbcbcbcb.com");
+  nfaRegexMatch(mynfa, "ababcc@aa.com");
+  nfaRegexMatch(mynfa, "ababababbabababbacbcbcbcbcbcs@a.com");
+  nfaRegexMatch(mynfa, "@a.com");
+}
+
+console.timeEnd("nfa");
+
+// console.assert(dfsRegexMatchFast(mynfa,"a@a.com"),"gg")
+// console.assert(dfsRegexMatchFast(mynfa,"ababcc@aa.com"),"gg")
+// console.assert(!dfsRegexMatchFast(mynfa,"ad@a.com"),"gg")
+// console.assert(!dfsRegexMatchFast(mynfa,"@a.com"),"gg")
