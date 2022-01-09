@@ -17,92 +17,62 @@ class E_NFA {
   end: E_NFAState = new E_NFAState();
 }
 
-function concatE_NFA(first: E_NFA, second: E_NFA): E_NFA {
-  first.end.isEnd = false;
-  elinkState(first.end, second.start);
-  return { start: first.start, end: second.end };
-}
-//并联
-function unionE_NFA(first: E_NFA, second: E_NFA): E_NFA {
-  let newstart = new E_NFAState();
-  let newend = new E_NFAState();
-  newstart.isEnd = false;
-  newend.isEnd = true;
+const BuildE_NFA = {
+  /**
+   * 串联
+   */
+  concatE_NFA(first: E_NFA, second: E_NFA): E_NFA {
+    first.end.isEnd = false;
+    elinkState(first.end, second.start);
+    return { start: first.start, end: second.end };
+  },
+  /**
+   * 并联
+   */
+  unionE_NFA(first: E_NFA, second: E_NFA): E_NFA {
+    let newstart = new E_NFAState();
+    let newend = new E_NFAState();
+    newstart.isEnd = false;
+    newend.isEnd = true;
 
-  elinkState(newstart, first.start);
-  elinkState(newstart, second.start);
-  elinkState(first.end, newend);
-  elinkState(second.end, newend);
-  first.end.isEnd = false;
-  second.end.isEnd = false;
+    elinkState(newstart, first.start);
+    elinkState(newstart, second.start);
+    elinkState(first.end, newend);
+    elinkState(second.end, newend);
+    first.end.isEnd = false;
+    second.end.isEnd = false;
 
-  return { start: newstart, end: newend };
-}
-//重
-function closureE_NFA(nfa: E_NFA): E_NFA {
-  let newstart = new E_NFAState();
-  let newend = new E_NFAState();
-  newstart.isEnd = false;
-  newend.isEnd = true;
+    return { start: newstart, end: newend };
+  },
+  /**
+   * 闭包操作，即"*"
+   */
+  closureE_NFA(nfa: E_NFA): E_NFA {
+    let newstart = new E_NFAState();
+    let newend = new E_NFAState();
+    newstart.isEnd = false;
+    newend.isEnd = true;
 
-  elinkState(newstart, nfa.start);
-  elinkState(nfa.end, nfa.start);
-  elinkState(nfa.end, newend);
-  elinkState(newstart, newend);
-  nfa.end.isEnd = false;
+    elinkState(newstart, nfa.start);
+    elinkState(nfa.end, nfa.start);
+    elinkState(nfa.end, newend);
+    elinkState(newstart, newend);
+    nfa.end.isEnd = false;
 
-  return { start: newstart, end: newend };
-}
-function creatE_NFA(symbol: string): E_NFA {
-  let nfa = new E_NFA();
-  linkState(nfa.start, nfa.end, symbol);
-  nfa.end.isEnd = true;
-  return nfa;
-}
+    return { start: newstart, end: newend };
+  },
+  /**
+   * 单字符
+   */
+  creatE_NFA(symbol: string): E_NFA {
+    let nfa = new E_NFA();
+    linkState(nfa.start, nfa.end, symbol);
+    nfa.end.isEnd = true;
+    return nfa;
+  },
+};
 
-function creatRegexE_NFA(): E_NFA {
-  //(a|b|c)
-  let c = creatE_NFA("c");
-  let ab = unionE_NFA(creatE_NFA("a"), creatE_NFA("b"));
-  let group1 = unionE_NFA(ab, c);
-
-  //(a|b|c)*
-  let c1 = creatE_NFA("c");
-  let ab1 = unionE_NFA(creatE_NFA("a"), creatE_NFA("b"));
-  let group2 = closureE_NFA(unionE_NFA(ab1, c1));
-  //@
-  let to = creatE_NFA("@");
-
-  //(a|b|c)
-  let c2 = creatE_NFA("c");
-  let ab2 = unionE_NFA(creatE_NFA("a"), creatE_NFA("b"));
-  let group3 = unionE_NFA(ab2, c2);
-
-  //(a|b|c)*
-  let c3 = creatE_NFA("c");
-  let ab3 = unionE_NFA(creatE_NFA("a"), creatE_NFA("b"));
-  let group4 = closureE_NFA(unionE_NFA(ab3, c3));
-
-  //.com
-  let charDot = creatE_NFA(".");
-  let charC = creatE_NFA("c");
-  let charO = creatE_NFA("o");
-  let charM = creatE_NFA("m");
-  let dotCOM = [charDot, charC, charO, charM].reduce((a, v) =>
-    concatE_NFA(a, v)
-  );
-
-  return [group1, group2, to, group3, group4, dotCOM].reduce((a, v) =>
-    concatE_NFA(a, v)
-  );
-  // return [group2, to].reduce((a, v) =>
-  //   concatE_NFA(a, v)
-  // );
-  // return concatE_NFA(group2, to)
-  // return group2
-}
-
-function dfsRegexMatch(nfa: E_NFA, str: string): Boolean {
+function enfaRegexMatch(nfa: E_NFA, str: string): Boolean {
   function fn(state: E_NFAState, visited: E_NFAState[], i: number): boolean {
     // 若已经到达过该节点，则返回false
     if (visited.includes(state)) {
@@ -130,8 +100,7 @@ function dfsRegexMatch(nfa: E_NFA, str: string): Boolean {
   return fn(nfa.start, [], 0);
 }
 
-
-function dfsRegexMatchFast(nfa: E_NFA, str: string) {
+function enfaRegexMatchFast(nfa: E_NFA, str: string) {
   // 当前状态所有ε相连的节点是同一类节点，均可加入current,此处采用bfs
   function neighbourState(current: Set<E_NFAState>) {
     let queue = [...current];
@@ -174,4 +143,4 @@ function dfsRegexMatchFast(nfa: E_NFA, str: string) {
   return fn(nfa, str);
 }
 
-export {E_NFAState,E_NFA, creatRegexE_NFA,dfsRegexMatch}
+export { E_NFAState, E_NFA, BuildE_NFA, enfaRegexMatch, enfaRegexMatchFast };
