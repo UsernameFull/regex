@@ -62,7 +62,7 @@ function strtoAST(str: string) {
     const ch = char();
     return new ASTNode("Atom", [ch]);
   }
-// 匹配factor
+  // 匹配factor
   function factor() {
     const atm = atom();
     if (current() === "*") {
@@ -98,4 +98,4 @@ function strtoAST(str: string) {
   return expr();
 }
 
-export {ASTNode,strtoAST}
+export { ASTNode, strtoAST };

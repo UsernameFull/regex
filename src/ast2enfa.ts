@@ -1,8 +1,8 @@
-import { BuildE_NFA,E_NFA } from "./enfa";
-import {ASTNode} from "./praser"
+import { BuildE_NFA, E_NFA } from "./enfa";
+import { ASTNode } from "./praser";
 
 // 有了ast之后，从ast转到enfa还是很简单的
-function ASTtoENFA(ast: ASTNode):E_NFA {
+function ASTtoENFA(ast: ASTNode): E_NFA {
   switch (ast.label) {
     case "Expr":
       if (ast.child.length === 3) {
